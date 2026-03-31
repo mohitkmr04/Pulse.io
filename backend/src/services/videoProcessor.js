@@ -1,5 +1,9 @@
 import ffmpeg from "fluent-ffmpeg";
-ffmpeg.setFfmpegPath("C:\\ffmpeg\\bin\\ffmpeg.exe");
+if (process.env.NODE_ENV === "production") {
+  ffmpeg.setFfmpegPath("./ffmpeg/ffmpeg"); // Render
+} else {
+  ffmpeg.setFfmpegPath("C:\\ffmpeg\\bin\\ffmpeg.exe"); // Local Windows
+}
 import Video from "../models/Video.js";
 import path from "path";
 
