@@ -1,0 +1,6 @@
+backend/uploads/
+*.mp4
+*.mov
+*.avi
+node_modules/
+.env
