@@ -6,38 +6,78 @@ export const uploadVideo = async (req, res) => {
   try {
     const file = req.file;
 
+    // upload to Cloudinary
     const result = await cloudinary.uploader.upload(file.path, {
       resource_type: "video",
       folder: "videos",
     });
 
+    let status = "safe";
+
+    // Example rules
+    if (file.size > 80 * 1024 * 1024) {
+      status = "flagged"; // large file
+    }
+
+    if (!file.mimetype.startsWith("video/")) {
+      status = "flagged";
+    }
+
+    //  Save in DB
     const video = await Video.create({
       title: file.originalname,
-      path: result.secure_url, // ✅ Cloudinary URL
-      status: "safe",
+      path: result.secure_url,
+      status,
       progress: 100,
       owner: req.user._id,
+      tenantId: req.user.tenantId
     });
 
-    res.json(video);
+  res.status(201).json({
+  success: true,
+  message: "Video uploaded successfully",
+  data: video
+});
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ msg: "Upload failed" });
+
+    //  If upload fails → flagged
+    res.status(500).json({
+      msg: "Upload failed",
+      status: "flagged"
+    });
   }
 };
 
 export const getVideos = async (req, res) => {
-  const { status } = req.query;
+  try {
+    const { status } = req.query;
 
-  const filter = {
-    tenantId: req.user.tenantId
-  };
+    const filter = {
+      owner: req.user._id // ✅ show only user's videos
+    };
 
-  if (status) filter.status = status;
+    // ✅ optional filter
+    if (status && status !== "all") {
+      filter.status = status;
+    }
 
-  const videos = await Video.find(filter);
+    const videos = await Video.find(filter).sort({ createdAt: -1 });
 
-  res.json(videos);
+    return res.json({
+      success: true,
+      data: videos
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch videos"
+    });
+  }
 };
 
 

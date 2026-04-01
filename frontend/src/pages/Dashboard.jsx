@@ -5,22 +5,34 @@ import { setVideos, updateProgress } from "../features/videoSlice";
 import Upload from "../components/Upload";
 import VideoCard from "../components/VideoCard";
 import socket from "../sockets/socket";
+import { toast } from "react-toastify";
 
 export default function Dashboard() {
   const dispatch = useDispatch();
-  const videos = useSelector((state) => state.video.videos);
+  const videos = useSelector((state) => state.video.videos) || [];
 
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
 
+  // ✅ Fetch Videos
   const fetchVideos = async () => {
     try {
       setLoading(true);
+
       const res = await API.get("/videos");
-      dispatch(setVideos(res.data));
+
+      // 🔥 IMPORTANT FIX (backend returns { success, data })
+      dispatch(setVideos(res.data.data));
+
     } catch (err) {
       console.error("Error fetching videos:", err);
+
+      toast.error(
+        err.response?.data?.message ||
+        "Failed to load videos ❌"
+      );
+
     } finally {
       setLoading(false);
     }
@@ -29,6 +41,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchVideos();
 
+    // ✅ Optional socket support (future-ready)
     const handleProgress = (data) => {
       dispatch(updateProgress(data));
     };
@@ -45,7 +58,7 @@ export default function Dashboard() {
       socket.off("completed", handleCompleted);
     };
   }, [dispatch]);
-
+    
   const filteredVideos = videos
     .filter((v) => (filter === "all" ? true : v.status === filter))
     .filter((v) =>
@@ -64,12 +77,14 @@ export default function Dashboard() {
 
       {/* Upload Section */}
       <div className="bg-white p-5 rounded-xl shadow-md">
-        <Upload />
+        {/* 🔥 Pass refresh function */}
+        <Upload onUploadSuccess={fetchVideos} />
       </div>
 
       {/* Controls */}
       <div className="bg-white p-4 rounded-xl shadow-md mt-6 flex flex-col md:flex-row gap-4 items-center">
         
+        {/* Filter */}
         <select
           className="border border-gray-300 rounded-lg px-3 py-2 
                      focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -79,9 +94,9 @@ export default function Dashboard() {
           <option value="all">All Videos</option>
           <option value="safe">Safe</option>
           <option value="flagged">Flagged</option>
-          <option value="processing">Processing</option>
         </select>
 
+        {/* Search */}
         <input
           type="text"
           placeholder="🔍 Search videos..."

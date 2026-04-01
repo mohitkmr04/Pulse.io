@@ -5,7 +5,6 @@ import { connectDB } from "./src/config/db.js";
 import { initSocket } from "./src/sockets/socket.js";
 
 dotenv.config();
-console.log("JWT_SECRET:", process.env.JWT_SECRET);
 
 const server = http.createServer(app);
 

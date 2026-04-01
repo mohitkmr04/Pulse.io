@@ -3,35 +3,113 @@ import User from "../models/User.js";
 import { generateToken } from "../utils/generateToken.js";
 
 export const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
+    // ✅ Basic validation
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "All fields are required ❌"
+      });
+    }
 
-  const user = await User.create({
-    name,
-    email,
-    password: hashed,
-    tenantId: email // simple tenant
-  });
+    // ✅ Check if user already exists (better UX)
+    const existingUser = await User.findOne({ email });
 
-  res.json({ token: generateToken(user._id) });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists with this email ❌"
+      });
+    }
+
+    // ✅ Hash password
+    const hashed = await bcrypt.hash(password, 10);
+
+    // ✅ Create user
+    const user = await User.create({
+      name,
+      email,
+      password: hashed,
+      tenantId: email
+    });
+
+    // ✅ Send response
+    res.json({
+      message: "User registered successfully ✅",
+      token: generateToken(user._id),
+      user: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    // ✅ Handle duplicate key error (extra safety)
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "Email already registered ❌"
+      });
+    }
+
+    res.status(500).json({
+      message: "Server error ❌"
+    });
+  }
 };
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    // ✅ Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required ❌"
+      });
+    }
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(400).json({ msg: "Invalid credentials" });
+    // ✅ Check user exists
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not registered ❌"
+      });
+    }
+
+    // ✅ Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Incorrect password ❌"
+      });
+    }
+
+    // ✅ Success response
+    res.json({
+      message: "Login successful ✅",
+      token: generateToken(user._id),
+      role: user.role,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Server error ❌"
+    });
   }
-
-  res.json({
-  token: generateToken(user._id),
-  role: user.role
-});
 };
-
 export const getUsers = async (req, res) => {
   const users = await User.find().select("-password");
   res.json(users);
