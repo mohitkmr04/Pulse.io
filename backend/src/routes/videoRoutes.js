@@ -9,10 +9,9 @@ import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-const upload = multer({ dest: "uploads/" });
+const upload = multer({ dest: "temp/" });
 
-router.post("/upload", protect(["editor", "admin"]), upload.single("video"), uploadVideo);
+router.post("/upload", protect(), upload.single("video"), uploadVideo);
 router.get("/", protect(), getVideos);
-router.get("/stream/:id", streamVideo);
 
 export default router;

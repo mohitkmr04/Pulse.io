@@ -1,19 +1,29 @@
 import Video from "../models/Video.js";
 import fs from "fs";
-import { processVideo } from "../services/videoProcessor.js";
+import cloudinary from "../config/cloudinary.js";
 
 export const uploadVideo = async (req, res) => {
-  const video = await Video.create({
-    title: req.body.title,
-    filename: req.file.filename,
-    path: req.file.path,
-    owner: req.user._id,
-    tenantId: req.user.tenantId
-  });
+  try {
+    const file = req.file;
 
-  processVideo(video._id);
+    const result = await cloudinary.uploader.upload(file.path, {
+      resource_type: "video",
+      folder: "videos",
+    });
 
-  res.json(video);
+    const video = await Video.create({
+      title: file.originalname,
+      path: result.secure_url, // ✅ Cloudinary URL
+      status: "safe",
+      progress: 100,
+      owner: req.user._id,
+    });
+
+    res.json(video);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Upload failed" });
+  }
 };
 
 export const getVideos = async (req, res) => {
