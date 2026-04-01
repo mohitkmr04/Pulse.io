@@ -33,11 +33,19 @@ export const uploadVideo = async (req, res) => {
       tenantId: req.user.tenantId
     });
 
+
   res.status(201).json({
   success: true,
   message: "Video uploaded successfully",
   data: video
 });
+
+    if (file.path) {
+      fs.unlink(file.path, (err) => {
+        if (err) console.error("Delete error:", err);
+        else console.log("Temp file deleted ✅");
+      });
+    }
 
   } catch (err) {
     console.error(err);

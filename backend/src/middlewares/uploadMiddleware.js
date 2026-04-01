@@ -1,5 +1,6 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 
 const MAX_SIZE = 100 * 1024 * 1024; 
 
@@ -14,7 +15,11 @@ const allowedExt = [".mp4", ".mkv", ".webm", ".avi"];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "temp/");
+    const dir = "temp/";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
   },
   filename: (req, file, cb) => {
     const uniqueName = `${Date.now()}-${file.originalname}`;

@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://pulse-io.onrender.com");
+const socket = io(import.meta.env.VITE_API_BASE_URL);
 
 // 🔥 Decode JWT to get userId
 const token = localStorage.getItem("token");
