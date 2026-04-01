@@ -8,8 +8,8 @@ const app = express();
 
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://your-frontend.vercel.app"
+    process.env.CLIENT_URL_1,
+    process.env.CLIENT_URL_2
   ],
   credentials: true
 }));
@@ -19,16 +19,13 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/videos", videoRoutes);
 
-
 app.use((err, req, res, next) => {
   console.error("🔥 ERROR:", err.message);
 
-  // Multer specific errors (file too large etc.)
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ msg: err.message });
   }
 
-  // Your custom file type error
   if (err.message === "Only valid video files are allowed") {
     return res.status(400).json({ msg: err.message });
   }
