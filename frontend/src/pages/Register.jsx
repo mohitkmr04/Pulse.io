@@ -30,7 +30,6 @@ export default function Register() {
         password
       });
 
-      console.log(res.data); // debug
 
       const { token, user } = res.data;
 

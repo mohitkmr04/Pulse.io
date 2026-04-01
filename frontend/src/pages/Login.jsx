@@ -27,7 +27,6 @@ export default function Login() {
         email,
         password
       });
-      console.log(res.data);
 
       const { token, role } = res.data;
 
